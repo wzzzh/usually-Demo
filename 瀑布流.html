@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			body{
+    			_background:skyblue;
+    		}
+	      *{
+	        margin: 0;
+	        padding: 0;
+	      }
+	      .pic{
+	        width: 236px;
+	        box-shadow:0 1px 3px rgba(0,0,0,.3);
+	        overflow:hidden;
+	        margin-top:10px;
+	      }
+	      img{
+	        width:236px;
+	        border: none;
+	        display: block;
+	       
+	      }
+	      ul{
+	        list-style: none;
+	        margin: 0 auto;
+	        /*border:1px solid #000;*/
+	        width:1050px;
+	        overflow: hidden;
+	         opacity: 0;
+	        transition: 1s;
+	      }
+	      li{
+	        /*position: absolute;*/
+	        border: 1px solid #ccc;
+	        float: left;
+	        margin: 8px;
+	        width:236px;
+	      }
+	    	#div1{
+				width:100%;
+				height:3px;
+				position: relative;
+				top:50px;
+			}
+			#num{
+				position: absolute;
+				width:100%;
+				height: 3px;
+				line-height: 3px;
+				text-align: center;
+				top:-1px;
+				font-size: 30px;
+			}
+			#div2{
+				width:0;
+				height: 3px;
+				background: #317EF3;
+				transition: .2s;
+				opacity:1;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="div1">
+	  		<div id="div2"></div>
+	  		<span id="num">0%</span>
+	  	</div>
+		<ul id="ul">
+    	<li>
+          <!--<div class="pic">
+            <img src="http:\/\/www.wookmark.com\/images\/original\/638518_wookmark.jpg">
+          </div>
+         -->
+        </li>
+        <li></li>
+        <li></li>
+        <li></li>    
+    </ul>
+	</body>
+	<script type="text/javascript" src="../2017-8-1.2/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript">
+		//http://www.wookmark.com/api/json/popular?callback=?
+		var lis = $('li');
+		var n = 0;
+		var page = 0;
+		var onOff = true;
+		$.ajax({
+			url:"http://www.wookmark.com/api/json/popular?callback=?",
+			dataType:'jsonp',
+			success:function(data){
+				let len = data.length;
+				$.each(data,function(i,e){
+					const div = $('<div class="pic"</div>');
+					const img = $(`<img src="${e.preview}" />`);
+					img[0].onload= function(){
+						n++;
+						let index = minIndex();
+						div.append(img);
+						$('li').eq(index).append(div);
+						$('#div2').css({
+							width:Math.floor((n/len)*100)+'%',
+							opacity:1-n/len
+						});
+						$('#num')[0].innerHTML = Math.floor((n/len)*100)+'%';
+						if(n == len){
+							$('#ul').css({
+								opacity:1
+							});
+							$('#div1').hide();
+							
+						}
+					}
+					img[0].onerror = function(){
+						n++;
+						if(n == len){
+							$('#ul').css({
+								opacity:1
+							});
+							$('#div1').hide();
+							
+						}
+					}
+				})
+			}
+		});
+		
+	$(window).scroll(function(){
+		var index = lis[minIndex()];
+		if(index.scrollHeight<=$(window).innerHeight()+$(window).scrollTop()){
+			if(onOff){
+				page++;
+				addPic()
+			}
+		}
+	})
+	function addPic(){
+		onOff = false;
+		$.ajax({
+			url:"http://www.wookmark.com/api/json/popular?callback=?",
+			dataType:'jsonp',
+			data:{
+				page:page
+			},
+			success:function(data){
+				let len = data.length;
+				$.each(data,function(i,e){
+					const div = $('<div class="pic"</div>');
+					const img = $(`<img src="${e.preview}" />`);
+					img[0].onload= function(){
+						let index = minIndex();
+						div.append(img);
+						$('li').eq(index).append(div);
+					}
+				})
+				onOff = true;
+			}
+		});
+	}
+	
+		function minIndex(){
+			let arr = [];
+			let num = 0;
+			$.each(lis, function(i,e) {
+				arr.push(e.scrollHeight)
+			});
+			num = Math.min.apply(null,arr);
+			return arr.findIndex(e=>e==num);
+		}
+		
+	</script>
+</html>

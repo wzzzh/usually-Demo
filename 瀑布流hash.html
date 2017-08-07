@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			body{
+				_background:skyblue;
+			}
+	      *{
+	        margin: 0;
+	        padding: 0;
+	      }
+	      .pic{
+	        width: 236px;
+	        box-shadow:0 1px 3px rgba(0,0,0,.3);
+	        overflow:hidden;
+	        margin-top:10px;
+	      }
+	      img{
+	        width:236px;
+	        border: none;
+	        display: block;
+	       
+	      }
+	      ul{
+	        list-style: none;
+	        margin: 0 auto;
+	       	position: relative;
+	        opacity: 0;
+	        transition: 1s;
+	      }
+	   #ul li{
+        position: absolute;
+        border: 1px solid #ccc;
+        width:236px;
+        transition: .5s;
+      }
+      #ol{
+      	width:100px;
+      	position: fixed;
+				bottom: 0;
+				right:0;
+				z-index:2;
+      }
+      #ol li{
+      	list-style: none;
+      	border: 1px solid #000;
+      	background:#fff;
+      	text-align: center;
+      	line-height: 30px;
+      	cursor: pointer;
+      }
+      #ol li:hover{
+      	background: seagreen;
+      	color: #fff;
+      }
+		</style>
+	</head>
+	<body>
+		<ul id="ul">  
+    	</ul>
+    	<ol id="ol">
+	    	<li>上一个</li>
+	    	<li>下一个</li>
+	    	<li>历史记录的</li>
+	    </ol>
+	</body>
+	<script type="text/javascript" src="../2017-8-1.2/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript">
+		//一个li的宽
+		let oneW = 236;
+		//间距
+		let marginL = 20;
+		//可视区的宽
+		let innerW = $(window).innerWidth()+marginL;
+		//一个整宽，li+marginL
+		let actW = oneW+marginL;
+		let len = Math.floor(innerW/actW);
+		let arrL = [];
+		let arrT = [];
+		let num = 0;
+		//ul的宽
+		$('#ul').css({
+			width:actW*len-marginL
+		})
+		//设定初始的left和top,把他们分别范进数组里
+		for(var i=0; i<len; i++){
+			arrT.push(0);
+			arrL.push(actW*i);
+		}
+		//判断hash，并对hash限制，限制下限
+		if(!location.hash){
+			location.hash = 'page=0';
+		}else{
+			num = location.hash.split('=')[1];
+			if(num*1 < 0){
+				num = 0;
+				window.location.hash = 'page=0';
+			};
+		}
+		//当hash改变的时候，通过hash的num值同时设置数据url的page
+		window.onhashchange = function(){
+			addPic(window.location.hash.split('=')[1])
+		}
+		
+		$('#ol').find('li').click(function(){
+			if($(this).index()==0){
+				num++;
+			}else if($(this).index()==1){
+				num--;
+				if(num <0){
+					num = 0;
+				}
+			}else{
+				//历史记录
+				history.go(-1)
+			}
+			//点击设置hash值
+			location.hash = 'page='+num;
+		})
+		
+		//初始化渲染页面
+		addPic(num);
+		function addPic(num){
+			//要想做分页，就应该在每次渲染页面的时候清空ul
+			$('#ul').html('');
+			//重新push每个li左和上的值
+			for(var i=0; i<len; i++){
+				arrT.push(0);
+				arrL.push(actW*i);
+			}
+			$.ajax({
+				url:"http://www.wookmark.com/api/json/popular?callback=?",
+				dataType:'jsonp',
+				data:{
+					page:num
+				},
+				success:function(data){
+					$.each(data, function(i,e) {
+						let li = $('<li><li>');
+						let iH = (e.height*oneW)/e.width
+						let img = $(`<img src="${e.preview}" style="height:${iH}px"/>`);
+						img[0].onload = function(){
+							li.append(img);
+							li.css({
+								left:arrL[minIndex()],
+								top:arrT[minIndex()]
+							})
+							$('#ul').append(li);
+							$('#ul').css({opacity:1});
+							arrT[minIndex()] += (iH+20);
+						}
+					});
+				}
+			});
+		}
+		
+		
+		$(window).resize(function(){
+			let innerW = $(window).innerWidth()+marginL;
+			let len = Math.floor(innerW/actW);
+			$('#ul').css({
+				width:actW*len-marginL
+			});
+			arrT.length = arrL.length = 0;
+			for(var i=0; i<len; i++){
+				arrT.push(0);
+				arrL.push(actW*i);
+			}
+			$('li').each(function(i,e){
+				$(e).css({
+					left:arrL[minIndex()],
+					top:arrT[minIndex()]
+				})
+				arrT[minIndex()] += ($(e).height()+20);
+			})
+		})
+		
+		function minIndex(){
+			let num= 0;
+			num = Math.min.apply(null,arrT);
+			return arrT.findIndex(e=>e==num);
+		}
+	</script>
+	</body>
+</html>
